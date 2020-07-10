@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import logging
 import subprocess
 from lib.rsalibnum import invmod
 from lib.keys_wrapper import PublicKey
 
+# used to track the location of RsaCtfTool
+# allows sage scripts to be launched anywhere in the fs
+_libutil_ = os.path.realpath(__file__)
+rootpath, _libutil_ = os.path.split(_libutil_)
+rootpath = "%s/.." % rootpath #up one dir
 
 def get_numeric_value(value):
     """Parse input (hex or numerical)
@@ -100,12 +106,26 @@ def print_results(args, publickey, private_key, uncipher):
             if len(uncipher) > 0:
                 logger.info("\nUnciphered data :")
                 for uncipher_ in uncipher:
-                    if args.output:
-                        try:
-                            with open(args.output, "ab") as output_fd:
-                                output_fd.write(uncipher_)
-                        except:
-                            logger.error("Can't write output file : %s" % args.output)
-                    logger.info(uncipher_)
+                    if not isinstance(uncipher_, list):
+                        uncipher_ = [uncipher_]
+
+                    for c in uncipher_:
+                        if args.output:
+                            try:
+                                with open(args.output, "ab") as output_fd:
+                                    output_fd.write(c)
+                            except:
+                                logger.error(
+                                    "Can't write output file : %s" % args.output
+                                )
+
+                        logger.info(f"HEX : 0x{c.hex()}")
+
+                        int_big = int.from_bytes(c, "big")
+                        int_little = int.from_bytes(c, "little")
+
+                        logger.info(f"INT (big endian) : {int_big}")
+                        logger.info(f"INT (little endian) : {int_little}")
+                        logger.info(f"STR : {repr(c)}")
         else:
             logger.critical("Sorry, unciphering failed.")
